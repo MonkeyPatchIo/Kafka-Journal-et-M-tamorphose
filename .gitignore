@@ -1,0 +1,6 @@
+*.iml
+.idea/
+target/
+logs/
+0-setup/kafka*
+0-setup/openjdk-11.0.2*
