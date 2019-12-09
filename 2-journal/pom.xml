@@ -13,27 +13,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>./journal-model</module>
-        <module>./journal-exercises</module>
+        <module>journal-model</module>
+        <module>journal-exercises</module>
     </modules>
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
 
 </project>
