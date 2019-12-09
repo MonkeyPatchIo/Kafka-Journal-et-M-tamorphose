@@ -10,6 +10,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>journal</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>./parse-books</module>
+    </modules>
 
     <build>
         <plugins>
