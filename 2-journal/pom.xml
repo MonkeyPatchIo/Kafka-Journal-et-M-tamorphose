@@ -13,7 +13,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>./parse-books</module>
+        <module>./journal-model</module>
+        <module>./journal-exercises</module>
     </modules>
 
     <build>
