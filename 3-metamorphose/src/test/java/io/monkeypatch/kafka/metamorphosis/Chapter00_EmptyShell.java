@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 class Chapter00_EmptyShell {
 
     private static final Logger LOG = LoggerFactory.getLogger(Chapter00_EmptyShell.class);
-    private static final String BOOTSTRAP_SERVERS = "localhost:9092";
+    private static final String BOOTSTRAP_SERVERS = "localhost:9093";
 
     private static final String APPLICATION_ID = UUID.randomUUID().toString();
     private static final String INPUT_TOPIC  = String.format("sentences-input-%s", APPLICATION_ID);
@@ -57,7 +57,7 @@ class Chapter00_EmptyShell {
         streamsBuilder
             .stream(
                 INPUT_TOPIC,
-                Consumed.with(new JsonSerde.StringSerde(), new JsonSerde.SentenceSerde())
+                Consumed.with(new JsonSerde.StringSerde(), new Sentence.Serde())
             )
             .peek((k, v) -> LOG.info("Replay: {}", v.getText()))
             .to(OUTPUT_TOPIC);
@@ -75,7 +75,7 @@ class Chapter00_EmptyShell {
         properties.put(ProducerConfig.ACKS_CONFIG, "all");
         properties.put(ProducerConfig.RETRIES_CONFIG, 3);
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, JsonSerde.StringSerde.class.getName());
-        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerde.SentenceSerde.class.getName());
+        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, Sentence.Serde.class.getName());
 
         KafkaProducer<String, Sentence> producer = new KafkaProducer<>(properties);
         //</editor-fold>
@@ -116,7 +116,7 @@ class Chapter00_EmptyShell {
         consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
         consumerConfig.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         consumerConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, JsonSerde.StringSerde.class.getName());
-        consumerConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonSerde.SentenceSerde.class.getName());
+        consumerConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, Sentence.Serde.class.getName());
 
         Consumer<String, Sentence> consumer = new KafkaConsumer<>(consumerConfig);
         consumer.subscribe(Collections.singleton(OUTPUT_TOPIC));
