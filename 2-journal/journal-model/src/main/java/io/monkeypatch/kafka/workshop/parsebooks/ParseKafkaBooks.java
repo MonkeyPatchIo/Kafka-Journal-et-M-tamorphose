@@ -1,13 +1,12 @@
-package io.monkeypatch.kafka.workshop.journal.workshop.parsebooks;
+package io.monkeypatch.kafka.workshop.parsebooks;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.monkeypatch.kafka.workshop.journal.workshop.model.FranzKafkaBook;
+import io.monkeypatch.kafka.workshop.model.FranzKafkaBook;
 import io.vavr.Tuple;
 import io.vavr.collection.List;
 import io.vavr.collection.Stream;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
-import org.apache.kafka.common.security.auth.KafkaPrincipalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +70,7 @@ public class ParseKafkaBooks {
                         .filter(Finished.class::isInstance)
                         .map(Finished.class::cast)
                         .flatMap(f -> f.content.map(s -> Tuple.of(f.getChapter(), s)))
-                        .map(chse -> new io.monkeypatch.kafka.workshop.journal.workshop.model.Sentence(idCounter.incrementAndGet(), book, chse._1, chse._2))
+                        .map(chse -> new io.monkeypatch.kafka.workshop.model.Sentence(idCounter.incrementAndGet(), book, chse._1, chse._2))
                         .map(s -> Try.of(() -> mapper.writeValueAsString(s)).get() + "\n")
                         .foldLeft("", (acc, json) -> acc + json);
                 File msgFile = new File("src/main/resources/messages/" + book);

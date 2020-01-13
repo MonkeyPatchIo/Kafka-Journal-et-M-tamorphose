@@ -1,8 +1,8 @@
-package io.monkeypatch.kafka.workshop.journal.workshop.model;
+package io.monkeypatch.kafka.workshop.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.monkeypatch.kafka.workshop.journal.workshop.serde.BaseJsonSerde;
+import io.monkeypatch.kafka.workshop.serde.BaseJsonSerde;
 import org.apache.commons.io.IOUtils;
 
 import java.io.InputStream;

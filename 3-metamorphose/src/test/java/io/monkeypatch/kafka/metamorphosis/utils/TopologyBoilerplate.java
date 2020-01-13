@@ -2,7 +2,7 @@ package io.monkeypatch.kafka.metamorphosis.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.monkeypatch.kafka.workshop.model.Sentence;
-import io.monkeypatch.kafka.workshop.journal.workshop.serde.JsonSerde;
+import io.monkeypatch.kafka.workshop.serde.JsonSerde;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Stream;

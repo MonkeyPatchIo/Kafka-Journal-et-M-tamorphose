@@ -1,4 +1,4 @@
-package io.monkeypatch.kafka.workshop.journal.workshop.model;
+package io.monkeypatch.kafka.workshop.model;
 
 public enum FranzKafkaBook {
 
