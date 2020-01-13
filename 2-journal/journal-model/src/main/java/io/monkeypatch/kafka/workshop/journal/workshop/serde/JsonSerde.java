@@ -1,4 +1,4 @@
-package io.monkeypatch.kafka.workshop.serde;
+package io.monkeypatch.kafka.workshop.journal.workshop.serde;
 
 public class JsonSerde {
 

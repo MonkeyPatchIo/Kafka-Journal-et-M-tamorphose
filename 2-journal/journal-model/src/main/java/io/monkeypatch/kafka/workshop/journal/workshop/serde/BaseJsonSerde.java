@@ -1,4 +1,5 @@
-package io.monkeypatch.kafka.workshop.serde;
+package io.monkeypatch.kafka.workshop.journal.workshop.serde;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

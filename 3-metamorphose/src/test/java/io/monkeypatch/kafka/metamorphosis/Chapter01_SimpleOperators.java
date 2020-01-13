@@ -1,8 +1,8 @@
 package io.monkeypatch.kafka.metamorphosis;
 
 import io.monkeypatch.kafka.metamorphosis.utils.TopologyBoilerplate;
-import io.monkeypatch.kafka.workshop.model.Sentence;
-import io.monkeypatch.kafka.workshop.serde.JsonSerde;
+import io.monkeypatch.kafka.workshop.journal.workshop.model.Sentence;
+import io.monkeypatch.kafka.workshop.journal.workshop.serde.JsonSerde;
 import io.vavr.collection.Stream;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Consumed;
