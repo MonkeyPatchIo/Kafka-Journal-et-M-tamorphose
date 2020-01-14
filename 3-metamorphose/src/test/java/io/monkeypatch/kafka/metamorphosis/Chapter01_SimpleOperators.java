@@ -60,7 +60,6 @@ class Chapter01_SimpleOperators extends TopologyBoilerplate {
     @Test
     public void test() throws Exception {
         replayKafkaMetamorphosis(INPUT_TOPIC);
-//        replayKafkaTrial();
 
         buildTopologyAndStart(APPLICATION_ID);
 

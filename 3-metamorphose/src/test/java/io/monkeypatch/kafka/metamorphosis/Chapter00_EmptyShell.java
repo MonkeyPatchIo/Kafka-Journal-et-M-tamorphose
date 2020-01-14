@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 class Chapter00_EmptyShell {
 
     private static final Logger LOG = LoggerFactory.getLogger(Chapter00_EmptyShell.class);
-    private static final String BOOTSTRAP_SERVERS = "localhost:9093";
+    private static final String BOOTSTRAP_SERVERS = "localhost:9092";
 
     private static final String APPLICATION_ID = UUID.randomUUID().toString();
     private static final String INPUT_TOPIC  = String.format("sentences-input-%s", APPLICATION_ID);
