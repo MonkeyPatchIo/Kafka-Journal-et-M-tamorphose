@@ -77,6 +77,10 @@ public class Sentence {
         }
     }
 
+    public static Stream<Sentence> fromAllBooks() {
+        return Stream.of(FranzKafkaBook.values()).flatMap(Sentence::fromBook);
+    }
+
     public static void main(String[] args) {
         Sentence.fromBook(FranzKafkaBook.metamorphosis)
                 .forEach(System.out::println);
