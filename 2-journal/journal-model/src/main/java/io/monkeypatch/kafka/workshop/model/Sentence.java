@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.monkeypatch.kafka.workshop.serde.BaseJsonSerde;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.InputStream;
 import java.util.Iterator;
@@ -59,6 +61,29 @@ public class Sentence {
                 ", chapter=" + chapter +
                 ", text='" + text + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Sentence sentence = (Sentence) o;
+        return new EqualsBuilder()
+                .append(getId(), sentence.getId())
+                .append(getChapter(), sentence.getChapter())
+                .append(getBook(), sentence.getBook())
+                .append(getText(), sentence.getText())
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(getId())
+                .append(getBook())
+                .append(getChapter())
+                .append(getText())
+                .toHashCode();
     }
 
     public static Stream<Sentence> fromBook(FranzKafkaBook book) {
