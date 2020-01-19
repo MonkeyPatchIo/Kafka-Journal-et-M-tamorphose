@@ -20,7 +20,7 @@ public class BaseJsonSerde<T> implements Serde<T>, Serializer<T>, Deserializer<T
         this.mapper
                 .registerModule(new JodaModule())
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        this.mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+        this.mapper.configure(SerializationFeature.INDENT_OUTPUT, false);
         this.mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 

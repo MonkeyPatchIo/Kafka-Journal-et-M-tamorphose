@@ -19,6 +19,7 @@ public class Sentence {
     public static class Serde extends BaseJsonSerde<Sentence> {
         public Serde() { super(Sentence.class); }
     }
+    public static final Serde SERDE = new Serde();
 
     @JsonProperty("id") private final int id;
     @JsonProperty("b") private final String book;
@@ -55,12 +56,7 @@ public class Sentence {
 
     @Override
     public String toString() {
-        return "Sentence{" +
-                "id=" + id +
-                ", book='" + book + '\'' +
-                ", chapter=" + chapter +
-                ", text='" + text + '\'' +
-                '}';
+        return SERDE.toJson(this);
     }
 
     @Override
@@ -105,6 +101,16 @@ public class Sentence {
     public static Stream<Sentence> fromAllBooks() {
         return Stream.of(FranzKafkaBook.values()).flatMap(Sentence::fromBook);
     }
+
+    public static Stream<Sentence> firstNSentencesByChapter(int n) {
+        return io.vavr.collection.Stream.ofAll(fromAllBooks())
+            .groupBy(s -> s.getBook() + s.getChapter())
+            .values()
+            .map(ss -> ss.take(n))
+            .reduce((a,b) -> io.vavr.collection.Stream.concat(a,b))
+            .asJava().stream();
+    }
+
 
     public static void main(String[] args) {
         Sentence.fromBook(FranzKafkaBook.metamorphosis)
