@@ -4,13 +4,13 @@ import io.monkeypatch.kafka.workshop.model.Sentence;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.io.FileUtils;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,10 +22,8 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class KakfaBoilerplate {
@@ -46,24 +44,34 @@ public class KakfaBoilerplate {
     }
 
     public void produceToTopic(
-        String destTopic,
-        Stream<Sentence> sentences,
-        Function<Sentence, Integer> keyExtractor
+            String destTopic,
+            Stream<Sentence> sentences,
+            Function<Sentence, Integer> keyExtractor
     ) {
-        createTopic(destTopic, partitions);
+        produceToTopic(destTopic, sentences, keyExtractor, false, true);
+    }
+
+    public void produceToTopic(
+            String destTopic,
+            Stream<Sentence> sentences,
+            Function<Sentence, Integer> keyExtractor,
+            boolean silent,
+            boolean createTopic
+    ) {
+        if (createTopic) { createTopic(destTopic, partitions); }
         Properties config = new Properties();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, Sentence.Serde.class);
         config.put(ProducerConfig.SEND_BUFFER_CONFIG, 1);
         config.put(ProducerConfig.RECEIVE_BUFFER_CONFIG, 1);
-        config.put(ProducerConfig.ACKS_CONFIG, "all");
+        config.put(ProducerConfig.ACKS_CONFIG, "1");
 
         Producer<Integer, Sentence> producer = new KafkaProducer<>(config);
         sentences.forEach(s -> {
             Integer key = keyExtractor.apply(s);
             Try.of(() -> producer.send(new ProducerRecord<>(destTopic, key, s)).get())
-                .peek(md -> LOG.info("PRODUCED {} key={} msg={}", msgId(md), key, s))
+                .peek(md -> { if(!silent) { LOG.info("PRODUCED {} key={} msg={}", msgId(md), key, s); }})
                 .onFailure(e -> LOG.error(e.getMessage(), e));
         });
     }
@@ -158,23 +166,26 @@ public class KakfaBoilerplate {
     }
 
 
-    private Map<TopicPartition, FileWriter> files = new HashMap<>();
+    private Map<Tuple2<String, TopicPartition>, FileWriter> files = new ConcurrentHashMap<>();
 
-    protected void registerRecordInPartitionFiles(ConsumerRecord<Integer, Sentence> record) {
+    protected void registerRecordInPartitionFiles(ConsumerRecord<Integer, Sentence> record, String baseFolder) {
         try {
             String topic = record.topic();
             int partition = record.partition();
             TopicPartition tp = new TopicPartition(topic, partition);
-            if (!files.containsKey(tp)) {
-                File folder = new File("target/topics/" + topic);
+            Tuple2<String, TopicPartition> key = Tuple.of(baseFolder, tp);
+            if (!files.containsKey(key)) {
+                File folder = new File(baseFolder, topic);
                 folder.mkdirs();
                 File file = new File(folder, "/partition_" + partition + ".csv");
+                FileUtils.touch(file);
                 String fileAbsPath = file.getAbsolutePath();
                 LOG.info("File for partition {} located there: {}", tp, fileAbsPath);
-                files.put(tp, new FileWriter(fileAbsPath));
+                files.put(key, new FileWriter(fileAbsPath));
             }
-            Writer writer = files.get(tp);
+            Writer writer = files.get(key);
             writer.write(String.format("%06d,%06d,%s\n", record.offset(), record.key(), record.value()));
+            writer.flush();
         }
         catch(Exception e) {
             LOG.error(e.getMessage(), e);

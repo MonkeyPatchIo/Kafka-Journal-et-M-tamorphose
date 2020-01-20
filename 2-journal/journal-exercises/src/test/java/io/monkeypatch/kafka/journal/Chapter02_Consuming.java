@@ -31,7 +31,13 @@ public class Chapter02_Consuming extends KakfaBoilerplate {
     @BeforeEach
     void produceContent() {
         produceToTopic(sourceTopic, sentences.get(), this::getKey);
-        // Leave some time to the broker to make all the necessary bookeeping.
+    }
+
+    private Integer getKey(Sentence s) {
+        // return null;
+        // return s.getText().length();
+        // return 0;
+        return s.getChapter();
     }
 
     @Test
@@ -51,55 +57,42 @@ public class Chapter02_Consuming extends KakfaBoilerplate {
         // Notice that we give a list of topics. We listen to only one here, but we could
         // subscribe to a regexp pattern matching on topic names, or even be very
         // fine-grained and select specific partitions by using the Consumer#assign method.
-        consumer.subscribe(
-            List.of(sourceTopic),
-            // This optional listener will detect when the consumer is assigned
-            // partitions, and when they are revoked.
-            new ConsumerRebalanceListener() {
-                @Override
-                public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-                    partitions.forEach(p -> LOG.info("CONSUMER Revoked : {}-{}", p.topic(), p.partition()));
-                }
-                @Override
-                public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-                    partitions.forEach(p -> LOG.info("CONSUMER Assigned: {}-{}", p.topic(), p.partition()));
+        consumer.subscribe(List.of(sourceTopic));
+
+        try {
+            // Now, we are ready to consume.
+            // Consuming with a KafkaConsumer is an entirely synchronous operation.
+            // Once you start to work with a consumer in a given thread, you can only
+            // manipulate it in the same thread.
+            while (countReceived < sentenceCount) {
+                // Tell the consumer to listen to messages for at most 1 seconds.
+                // Most of the time, it will return faster than that, only waiting
+                // that amount of time when there is nothin to consume. Some
+                // consumer config parameters can tune this behaviour: wait for at most
+                // a given number of messages, a max number of bytes received, etc.
+                ConsumerRecords<Integer, Sentence> records = consumer.poll(Duration.ofSeconds(10));
+                LOG.info("CONSUMER Polled {} records", records.count());
+
+                for (ConsumerRecord<Integer, Sentence> record : records) {
+                    // Just so that you can see what each partition contained,
+                    // we will create a folder for the dest topic, and a file
+                    // for each partition in this folder. The files will contain
+                    // the offset/keys/values for each record corresponding to this partition.
+                    registerRecordInPartitionFiles(record, "target/ch02/");
+                    LOG.info("CONSUMED {} key={} msg={}", msgId(record), record.key(), record.value());
+                    countReceived += 1;
                 }
             }
-        );
 
-        // Now, we are ready to consume.
-        // Consuming with a KafkaConsumer is an entirely synchronous operation.
-        // Once you start to work with a consumer in a given thread, you can only
-        // manipulate it in the same thread.
-        while (countReceived < sentenceCount) {
-            // Tell the consumer to listen to messages for at most 1 seconds.
-            // Most of the time, it will return faster than that, only waiting
-            // that amount of time when there is nothin to consume. Some
-            // consumer config parameters can tune this behaviour: wait for at most
-            // a given number of messages, a max number of bytes received, etc.
-            ConsumerRecords<Integer, Sentence> records = consumer.poll(Duration.ofSeconds(10));
-            LOG.info("CONSUMER Polled {} records", records.count());
+            assertThat(countReceived).isEqualTo(sentenceCount);
 
-            for (ConsumerRecord<Integer, Sentence> record: records) {
-                // Just so that you can see what each partition contained,
-                // we will create a folder for the dest topic, and a file
-                // for each partition in this folder. The files will contain
-                // the offset/keys/values for each record corresponding to this partition.
-                registerRecordInPartitionFiles(record);
-                LOG.info("CONSUMED {} key={} msg={}", msgId(record), record.key(), record.value());
-                countReceived += 1;
-            }
+            // You can look at the partition files in this project's target/ch02 folder.
+            dumpPartitionFiles();
         }
-
-        assertThat(countReceived).isEqualTo(sentenceCount);
-
-        // You can look at the partition files in this project's target/topics folder.
-        dumpPartitionFiles();
-
-    }
-
-
-    private void registerRecord(ConsumerRecord<Integer, Sentence> record) {
+        finally {
+            // Don't forget to close the consumers when you're done with them.
+            consumer.close();
+        }
     }
 
     // Creating a consumer config needs more work than for a producer.
@@ -134,13 +127,6 @@ public class Chapter02_Consuming extends KakfaBoilerplate {
         config.put(ConsumerConfig.SEND_BUFFER_CONFIG, "1");
 
         return config;
-    }
-
-    private Integer getKey(Sentence s) {
-        // return null;
-        // return s.getText().length();
-        // return 0;
-        return s.getChapter();
     }
 
 }
