@@ -5,6 +5,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.*;
@@ -105,6 +106,10 @@ public class KakfaBoilerplate {
     }
 
     private Map<String, Tuple2<Integer, Sentence>> pollForFiveSeconds(String topicName, int max) {
+        String baseFolder = "target/ch01";
+        files.clear();
+        Try.run(() -> FileUtils.forceDelete(new File(baseFolder)));
+
         int rand = new Random().nextInt();
 
         Properties config = new Properties();
@@ -122,30 +127,19 @@ public class KakfaBoilerplate {
             LocalTime waitUntil = LocalTime.now().plusSeconds(5);
             Map<String, Tuple2<Integer, Sentence>> result = new ConcurrentHashMap<>();
 
-            consumer.subscribe(List.of(topicName), new ConsumerRebalanceListener() {
-                @Override
-                public void onPartitionsRevoked(Collection<TopicPartition> collection) {
-                    //LOG.info("Revoked: {}", collection);
-                }
-                @Override
-                public void onPartitionsAssigned(Collection<TopicPartition> collection) {
-                    //LOG.info("Assigned: {}", collection);
-                }
-            });
+            consumer.subscribe(List.of(topicName));
 
             AtomicBoolean hasPolled = new AtomicBoolean();
             while (result.size() < max && waitUntil.isAfter(LocalTime.now())) {
                 ConsumerRecords<Integer, Sentence> records = consumer.poll(Duration.ofSeconds(1));
-                //LOG.info("Assigned to {} partitions", consumer.assignment().size());
-                //LOG.info("Polled: {}", records.count());
                 records.forEach(record -> {
                     hasPolled.set(true);
+                    registerRecordInPartitionFiles(record, baseFolder);
                     Tuple2<Integer, Sentence> kv = Tuple.of(record.key(), record.value());
                     String msgId = msgId(record);
                     result.put(msgId, kv);
                     LOG.info("CONSUMED SYNC  message {} for sentence {}", msgId, record.value());
                 });
-                //LOG.info("Total messages seen: {} (max is {})", result.size(), max);
             }
             return result;
         }
@@ -154,6 +148,7 @@ public class KakfaBoilerplate {
         }
         finally {
             consumer.close();
+            dumpPartitionFiles();
         }
     }
 
@@ -177,14 +172,19 @@ public class KakfaBoilerplate {
             if (!files.containsKey(key)) {
                 File folder = new File(baseFolder, topic);
                 folder.mkdirs();
-                File file = new File(folder, "/partition_" + partition + ".csv");
+                File file = new File(folder, "/" + partition + ".json");
                 FileUtils.touch(file);
                 String fileAbsPath = file.getAbsolutePath();
                 LOG.info("File for partition {} located there: {}", tp, fileAbsPath);
-                files.put(key, new FileWriter(fileAbsPath));
+                FileWriter v = new FileWriter(fileAbsPath);
+                v.write("[\n");
+                files.put(key, v);
             }
             Writer writer = files.get(key);
-            writer.write(String.format("%06d,%06d,%s\n", record.offset(), record.key(), record.value()));
+            writer.write(String.format("  { \"offset\": %s, \"key\": %s, \"value\": %s },\n",
+                    StringUtils.leftPad(""+record.offset(), 4),
+                    StringUtils.leftPad(""+record.key(), 12),
+                    record.value()));
             writer.flush();
         }
         catch(Exception e) {
@@ -196,6 +196,7 @@ public class KakfaBoilerplate {
     protected void dumpPartitionFiles() {
         try {
             for (FileWriter w: files.values()) {
+                w.write("]");
                 w.flush();
                 w.close();
             }

@@ -7,6 +7,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.IntegerSerializer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -127,4 +128,8 @@ class Chapter01_Producing extends KakfaBoilerplate {
         return s.getChapter();
     }
 
+    @AfterEach
+    void logTopicName() {
+        LOG.info("Destination topic: {}", destTopic);
+    }
 }

@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -81,7 +82,10 @@ public class Chapter03_GroupConsuming extends KakfaBoilerplate {
         consumer1Finished.set(true);
         throttlePollingMs.set(0); // No need to make things longer anymore...
 
-        assertThat(latch.await(5, TimeUnit.MINUTES)).isTrue();
+        // We're happy with reaching this point quickly enough, no tests beyond that.
+        assertThat(latch.await(2, TimeUnit.MINUTES)).isTrue();
+
+        // Allow consumers to terminate properly.
         finished.set(true);
 
         // You can look at the partition files in this project's target/ch03 folder.
@@ -89,7 +93,8 @@ public class Chapter03_GroupConsuming extends KakfaBoilerplate {
     }
 
     private void runConsumer(Properties baseConfig, String consumerId, CountDownLatch latch, AtomicBoolean finished, AtomicInteger throttlePollingMs) {
-        Executors.newSingleThreadExecutor().submit(() -> {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(() -> {
             Properties config = (Properties)baseConfig.clone();
             config.put(ConsumerConfig.CLIENT_ID_CONFIG, consumerId);
             Consumer<Integer, Sentence> consumer = new KafkaConsumer<>(config);
@@ -129,6 +134,7 @@ public class Chapter03_GroupConsuming extends KakfaBoilerplate {
             }
             finally {
                 consumer.close();
+                executor.shutdown();
             }
         });
     }
