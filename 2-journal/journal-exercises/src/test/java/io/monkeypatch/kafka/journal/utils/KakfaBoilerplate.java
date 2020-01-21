@@ -25,13 +25,14 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class KakfaBoilerplate {
     private static final Logger LOG = LoggerFactory.getLogger(KakfaBoilerplate.class);
 
     public static final SimpleDateFormat dateFormat = new SimpleDateFormat("HHmmssSSS");
-    public static final String brokers = "localhost:9192,localhost:9292";
+    public static final String brokers = "localhost:9092";
     public static final Integer partitions = 10;
 
     protected final String testRunTopic = topicName();
@@ -78,13 +79,18 @@ public class KakfaBoilerplate {
     }
 
     public void createTopic(String topicName, int partitions) {
+        createTopics(Set.of(topicName), partitions);
+    }
+
+    public void createTopics(Set<String> topicNames, int partitions) {
         try {
             Properties config = new Properties();
             config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
             AdminClient admin = KafkaAdminClient.create(config);
-            CreateTopicsResult result = admin.createTopics(List.of(new NewTopic(topicName, partitions, (short) 2)));
-            // Wait for the topic to be created
-            result.all().get();
+            List<NewTopic> newTopics = topicNames.stream()
+                    .map(name -> new NewTopic(name, partitions, (short) 1))
+                    .collect(Collectors.toList());
+            admin.createTopics(newTopics).all().get();
         }
         catch(Exception e) {
             e.printStackTrace();
