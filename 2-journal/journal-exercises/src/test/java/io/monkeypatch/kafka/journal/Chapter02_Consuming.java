@@ -3,7 +3,6 @@ package io.monkeypatch.kafka.journal;
 import io.monkeypatch.kafka.journal.utils.KakfaBoilerplate;
 import io.monkeypatch.kafka.workshop.model.Sentence;
 import org.apache.kafka.clients.consumer.*;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;

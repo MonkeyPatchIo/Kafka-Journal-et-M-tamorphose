@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class Chapter03_GroupConsuming extends KakfaBoilerplate {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Chapter02_Consuming.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Chapter03_GroupConsuming.class);
 
     String sourceTopic = topicName();
     Supplier<Stream<Sentence>> sentences = () -> Sentence.fromAllBooks();
@@ -68,8 +68,9 @@ public class Chapter03_GroupConsuming extends KakfaBoilerplate {
 
         // Start producing to the topic asynchronously
         Executors.newSingleThreadExecutor().submit(() ->
-            produceToTopic(sourceTopic, sentences.get(), this::getKey, true, false)
+                produceToTopic(sourceTopic, sentences.get(), this::getKey, false, false)
         );
+
         // Wait for the 2 first consumers to start receiving messages
         Try.run(() -> Thread.sleep(5000));
 
@@ -92,11 +93,9 @@ public class Chapter03_GroupConsuming extends KakfaBoilerplate {
         dumpPartitionFiles();
     }
 
-    private void runConsumer(Properties baseConfig, String consumerId, CountDownLatch latch, AtomicBoolean finished, AtomicInteger throttlePollingMs) {
+    private void runConsumer(Properties config, String consumerId, CountDownLatch latch, AtomicBoolean finished, AtomicInteger throttlePollingMs) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.submit(() -> {
-            Properties config = (Properties)baseConfig.clone();
-            config.put(ConsumerConfig.CLIENT_ID_CONFIG, consumerId);
             Consumer<Integer, Sentence> consumer = new KafkaConsumer<>(config);
             try {
                 consumer.subscribe(

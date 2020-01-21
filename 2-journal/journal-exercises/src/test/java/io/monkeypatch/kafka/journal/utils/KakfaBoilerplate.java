@@ -6,7 +6,10 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.KafkaAdminClient;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.TopicPartition;
@@ -34,8 +37,6 @@ public class KakfaBoilerplate {
     public static final SimpleDateFormat dateFormat = new SimpleDateFormat("HHmmssSSS");
     public static final String brokers = "localhost:9092";
     public static final Integer partitions = 10;
-
-    protected final String testRunTopic = topicName();
 
     public String topicName() {
         return String.format("%s-%s",
@@ -123,7 +124,6 @@ public class KakfaBoilerplate {
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, IntegerDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, Sentence.Serde.class);
         config.put(ConsumerConfig.GROUP_ID_CONFIG, "test-group-" + rand);
-        config.put(ConsumerConfig.CLIENT_ID_CONFIG, "test-client-" + rand);
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
 
