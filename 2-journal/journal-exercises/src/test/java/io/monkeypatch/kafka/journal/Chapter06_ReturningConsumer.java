@@ -16,89 +16,85 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
+public class Chapter06_ReturningConsumer extends KakfaBoilerplate {
 
-public class Chapter04_MoreTopics extends KakfaBoilerplate {
+    private static final Logger LOG = LoggerFactory.getLogger(Chapter06_ReturningConsumer.class);
 
-    private static final Logger LOG = LoggerFactory.getLogger(Chapter04_MoreTopics.class);
-
-    String sourceTopicBase = topicName();
+    String sourceTopic = topicName();
     Supplier<Stream<Sentence>> sentences = () -> Sentence.fromAllBooks();
     Integer sentenceCount = io.vavr.collection.Stream.ofAll(sentences.get()).map(s -> 1).sum().intValue();
 
-    // In this chapter, we create several topics.
-    // Here, we provide a function in order to determine the suffix of the topic
-    // for a given sentence.
-    public String topicSuffix(Sentence s) {
-        //  Topics organised by book:
-        //return s.getBook();
-        //   Topics organised by book/chapter:
-        //return s.getBook() + s.getChapter();
-        //   Topics organised by first letter in sentence:
-        return ("" + s.getText().toLowerCase().charAt(0)).replaceFirst("\\W", "_");
-    }
-    public String topicForSentence(Sentence s) {
-        return sourceTopicBase + "-" + topicSuffix(s);
-    }
-
-    @BeforeEach
-    void initTopics() {
-        // Creating the topics upfront
-        createTopics(sentences.get().map(this::topicForSentence).collect(Collectors.toSet()), 3);
+    @BeforeEach void initTopic() {
+        createTopic(sourceTopic, 10);
     }
 
     @Test
-    void testPatternConsuming() throws Exception {
-        int groupdSuffix = random.nextInt();
-        String groupId = String.format("test-group-%d", groupdSuffix);
-        Properties config = consumerConfig(groupId);
-
+    void testReturningConsumer() throws Exception {
+        int groupSuffix = random.nextInt();
         CountDownLatch latch = new CountDownLatch(sentenceCount);
-        AtomicBoolean finished = new AtomicBoolean();
 
-        // Run two consumers (in the same group) in parallel, forcing them to share partitions.
-        Pattern topicPattern = Pattern.compile(sourceTopicBase + "-.*");
-        runConsumer(topicPattern, config, "consumer-1", latch, finished);
-        runConsumer(topicPattern, config, "consumer-2", latch, finished);
+        // Our consumer is instructed to consume only a fixed amount of messages before closing itself.
+        // We will loop and create a new consumer each time the previous one has reached this max number of messages.
+        int maxNumberOfMessagesConsumedByEachConsumer = 100;
 
-        // Start producing to the topics asynchronously, choosing a specific topic for each sentence
-        runProducer(this::topicForSentence, sentences.get(), this::getKey, true);
+        runProducer(s -> sourceTopic, sentences.get(), this::getKey, true);
 
-        assertThat(latch.await(2, TimeUnit.MINUTES)).isTrue();
-        finished.set(true);
+        int iteration = 0; // This number allows to separate the dumped files in folders per iteration
+        do {
+
+            // What happens if we give a new groupId each time instead?
+            String groupId = String.format("test-group-%d", groupSuffix);
+
+            Properties config = consumerConfig(groupId);
+
+            CountDownLatch finished = new CountDownLatch(1);
+            runConsumer(sourceTopic, config, "consumer-1", latch, finished,
+                    iteration,
+                    maxNumberOfMessagesConsumedByEachConsumer
+            );
+            finished.await(30, TimeUnit.SECONDS);
+            iteration += 1;
+        } while(latch.getCount() > 0);
+
     }
 
-    private void runConsumer(Pattern topicPattern, Properties baseConfig, String consumerId, CountDownLatch latch, AtomicBoolean finished) {
+    private void runConsumer(String sourceTopic, Properties baseConfig, String consumerId,
+                             CountDownLatch latch,
+                             CountDownLatch finished,
+                             int iteration,
+                             int pollMaxMessages
+    ) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.submit(() -> {
             Properties config = (Properties)baseConfig.clone();
             Consumer<Integer, Sentence> consumer = new KafkaConsumer<>(config);
+            int polled = 0;
             try {
-                // We consume from a pattern of topics
-                consumer.subscribe(topicPattern);
+                consumer.subscribe(List.of(sourceTopic));
                 do {
                     ConsumerRecords<Integer, Sentence> records = consumer.poll(Duration.ofMillis(500));
                     LOG.info("CONSUMER {} polled {} records", consumerId, records.count());
                     for (ConsumerRecord<Integer, Sentence> record : records) {
-                        registerRecordInPartitionFiles(record, "target/ch04/" + consumerId + "/");
+                        polled += 1;
+                        registerRecordInPartitionFiles(record, "target/ch06/iteration_" + iteration + "/");
                         latch.countDown();
-                        long count = latch.getCount();
-                        if(count % 10 == 0) LOG.info("CONSUMER {} latch count at {}", consumerId, count);
                     }
-                } while (!finished.get());
+
+                    // What happens if we do not commit here?
+                    consumer.commitSync(Duration.ofSeconds(3));
+
+                } while (polled < pollMaxMessages && latch.getCount() > 0);
+                finished.countDown();
             }
             catch(Exception e) {
                 LOG.error(e.getMessage(), e);
@@ -110,15 +106,20 @@ public class Chapter04_MoreTopics extends KakfaBoilerplate {
         });
     }
 
-
     private Properties consumerConfig(String groupId) {
         Properties config = new Properties();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, IntegerDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, Sentence.Serde.class);
+
+        // What happens if we give a different group id each time?
         config.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        // What happens if we set auto commit to true, and do not commit in the consumer loop?
         config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+
         config.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "20");
         config.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_uncommitted");
         config.put(ConsumerConfig.RECEIVE_BUFFER_CONFIG, "1");

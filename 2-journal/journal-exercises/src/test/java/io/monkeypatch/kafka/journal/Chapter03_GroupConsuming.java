@@ -15,7 +15,6 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,25 +34,13 @@ public class Chapter03_GroupConsuming extends KakfaBoilerplate {
     Supplier<Stream<Sentence>> sentences = () -> Sentence.fromAllBooks();
     Integer sentenceCount = io.vavr.collection.Stream.ofAll(sentences.get()).map(s -> 1).sum().intValue();
 
-    @BeforeEach
-    void initTopic() {
+    @BeforeEach void initTopic() {
         createTopic(sourceTopic, 10);
-    }
-
-    private Integer getKey(Sentence s) {
-        // return null;
-        // return s.getText().length();
-        // return 0;
-        // return s.getChapter();
-
-        // For this chapter, having a lot of keys means probably using all the partitions.
-        // Other options can be tested anyway, though.
-        return s.hashCode();
     }
 
     @Test
     void testGroupConsuming() throws Exception {
-        int rand = new Random().nextInt();
+        int rand = random.nextInt();
         String groupId = String.format("test-group-%d", rand);
         Properties config = consumerConfig(groupId);
 
@@ -153,5 +140,15 @@ public class Chapter03_GroupConsuming extends KakfaBoilerplate {
         return config;
     }
 
+    private Integer getKey(Sentence s) {
+        // return null;
+        // return s.getText().length();
+        // return 0;
+        // return s.getChapter();
+
+        // For this chapter, having a lot of keys means probably using all the partitions.
+        // Other options can be tested anyway, though.
+        return s.hashCode();
+    }
 
 }

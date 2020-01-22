@@ -24,23 +24,20 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class Chapter05_RententionPolicy extends KakfaBoilerplate {
+public class Chapter05_RetentionPolicy extends KakfaBoilerplate {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Chapter05_RententionPolicy.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Chapter05_RetentionPolicy.class);
 
     String sourceTopic = topicName();
     Supplier<Stream<Sentence>> sentences = () -> Sentence.fromAllBooks();
@@ -63,16 +60,11 @@ public class Chapter05_RententionPolicy extends KakfaBoilerplate {
             e.printStackTrace();
         }
     }
-    private Integer getKey(Sentence s) {
-        // return null;
-        return s.getText().length();
-        // return 0;
-        // return s.getChapter();
-    }
+
 
     @Test
-    void testPatternConsuming() throws Exception {
-        int rand = new Random().nextInt();
+    void testRetentionPolicy() throws Exception {
+        int rand = random.nextInt();
         String groupId = String.format("test-group-%d", rand);
         Properties config = consumerConfig(groupId);
         CountDownLatch latch = new CountDownLatch(1);
@@ -188,6 +180,13 @@ public class Chapter05_RententionPolicy extends KakfaBoilerplate {
         config.put(ProducerConfig.RECEIVE_BUFFER_CONFIG, 1);
         config.put(ProducerConfig.ACKS_CONFIG, "1");
         return config;
+    }
+
+    private Integer getKey(Sentence s) {
+        // return null;
+        // return s.getText().length();
+        // return 0;
+        return s.getChapter();
     }
 
 }

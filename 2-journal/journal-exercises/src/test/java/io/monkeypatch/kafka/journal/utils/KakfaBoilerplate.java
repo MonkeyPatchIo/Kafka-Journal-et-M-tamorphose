@@ -15,6 +15,7 @@ import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
+import org.junit.jupiter.api.AfterEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +38,8 @@ public class KakfaBoilerplate {
     public static final SimpleDateFormat dateFormat = new SimpleDateFormat("HHmmssSSS");
     public static final String brokers = "localhost:9092";
     public static final Integer partitions = 10;
+
+    public static final Random random = new Random();
 
     public String topicName() {
         return String.format("%s-%s",
@@ -117,7 +120,7 @@ public class KakfaBoilerplate {
         files.clear();
         Try.run(() -> FileUtils.forceDelete(new File(baseFolder)));
 
-        int rand = new Random().nextInt();
+        int rand = random.nextInt();
 
         Properties config = new Properties();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
@@ -213,5 +216,6 @@ public class KakfaBoilerplate {
         }
     }
 
+    @AfterEach protected void dumpFiles() { dumpPartitionFiles(); }
 
 }

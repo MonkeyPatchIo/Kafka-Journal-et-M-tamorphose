@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
-import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -96,7 +95,7 @@ public class Chapter02_Consuming extends KakfaBoilerplate {
     // Creating a consumer config needs more work than for a producer.
     // Here, we'll be setting some more properties.
     private Properties consumerConfig() {
-        int rand = new Random().nextInt();
+        int rand = random.nextInt();
         Properties config = new Properties();
 
         // Where to contact the kafka brokers, always required...
