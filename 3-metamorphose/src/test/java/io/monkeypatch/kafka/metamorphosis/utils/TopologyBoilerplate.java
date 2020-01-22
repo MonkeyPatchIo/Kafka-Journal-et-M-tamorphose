@@ -41,7 +41,7 @@ public abstract class TopologyBoilerplate {
 
     private static final Logger LOG = LoggerFactory.getLogger(TopologyBoilerplate.class);
 
-    private static final String BOOTSTRAP_SERVERS = "localhost:9192";
+    private static final String BOOTSTRAP_SERVERS = "localhost:9092";
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
