@@ -31,6 +31,13 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * In this chapter, we run a producer which send messages to several topics.
+ *
+ * We use a single consumer to consume from all of them at the same time.
+ *
+ * Topics are nothing but convenient ways to refer to groups of partitions.
+ */
 public class Chapter04_MoreTopics extends KakfaBoilerplate {
 
     private static final Logger LOG = LoggerFactory.getLogger(Chapter04_MoreTopics.class);

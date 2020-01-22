@@ -21,6 +21,9 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * This first chapters introduces how to send messages to kafka.
+ */
 class Chapter01_Producing extends KakfaBoilerplate {
 
     private static final Logger LOG = LoggerFactory.getLogger(Chapter01_Producing.class);

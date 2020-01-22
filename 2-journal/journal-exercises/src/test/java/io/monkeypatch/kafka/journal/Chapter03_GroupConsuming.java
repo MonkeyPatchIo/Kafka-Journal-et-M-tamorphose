@@ -26,6 +26,16 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Now we want to scale our consumers.
+ *
+ * We can have several consumers sharing work among them,
+ * by splitting the partitions and each consumer dealing with
+ * its own partitions.
+ *
+ * For this to happen, the consumers must be declared to belong
+ * to the same group (= have the same group ID).
+ */
 public class Chapter03_GroupConsuming extends KakfaBoilerplate {
 
     private static final Logger LOG = LoggerFactory.getLogger(Chapter03_GroupConsuming.class);

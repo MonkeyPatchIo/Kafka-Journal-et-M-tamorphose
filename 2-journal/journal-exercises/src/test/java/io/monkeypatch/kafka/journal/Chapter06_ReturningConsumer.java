@@ -26,6 +26,15 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+/**
+ * The kafka brokers keep track of the last offset polled, for each group, for each partition.
+ *
+ * By default, the consumers have a enable.auto.commit value to true.
+ *
+ * In our tests until now, this value has been set to false.
+ *
+ * In this chapter, we attempt to manually commit this information.
+ */
 public class Chapter06_ReturningConsumer extends KakfaBoilerplate {
 
     private static final Logger LOG = LoggerFactory.getLogger(Chapter06_ReturningConsumer.class);

@@ -35,6 +35,15 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Topics can be configured to "forget" old data.
+ *
+ * This behaviour is hard to reproduce in small tests, with small batches of data.
+ *
+ * This chapter only shows how to configure the topics,
+ * and attempts to demonstrate that data is actually lost
+ * when consuming too late.
+ */
 public class Chapter05_RetentionPolicy extends KakfaBoilerplate {
 
     private static final Logger LOG = LoggerFactory.getLogger(Chapter05_RetentionPolicy.class);
@@ -51,7 +60,7 @@ public class Chapter05_RetentionPolicy extends KakfaBoilerplate {
             AdminClient admin = KafkaAdminClient.create(config);
             NewTopic topic = new NewTopic(sourceTopic, 3, (short)1);
             topic.configs(HashMap.of(
-                    TopicConfig.RETENTION_BYTES_CONFIG, "1024", // 1kb allowed per partition
+                    TopicConfig.RETENTION_BYTES_CONFIG, "256", // 256bytes allowed per partition
                     TopicConfig.RETENTION_MS_CONFIG, "5000" // 5 seconds...
             ).toJavaMap());
             admin.createTopics(List.of(topic)).all().get();
@@ -77,9 +86,8 @@ public class Chapter05_RetentionPolicy extends KakfaBoilerplate {
 
         // Leave some time for compaction to happen.
         // We don't control exactly when the server will do compaction.
-        // Leaving a smaller time makes the test fail.
+        // What happens if we set a smaller waiting time?
         Thread.sleep( 10_000);
-        //Thread.sleep(   100);
 
         // Run a single consumer, just to see what it gets
         runConsumer(sourceTopic, config, latch, consumedSentences);
@@ -104,9 +112,9 @@ public class Chapter05_RetentionPolicy extends KakfaBoilerplate {
                     }
                     else {
                         emptyPolls = 0;
-                        Thread.sleep(200);
                     }
                     for (ConsumerRecord<Integer, Sentence> record : records) {
+                        Thread.sleep(20); // Faking a long treatment on the records...
                         consumedSentences.incrementAndGet();
                         LOG.info("CONSUMED {} key={} msg={}", msgId(record), record.key(), record.value());
                         registerRecordInPartitionFiles(record, "target/ch05/");
@@ -129,11 +137,6 @@ public class Chapter05_RetentionPolicy extends KakfaBoilerplate {
 
     private Properties consumerConfig(String groupId) {
         Properties config = new Properties();
-        // This property is of some significance here.
-        // Wishing the earliest messages may have been erased.
-        // Using latest should allow to consume everything from the time
-        // we start consuming, unless our treatment for each message
-        // is too long...
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         // We make sure we don't consume too fast...
@@ -163,7 +166,7 @@ public class Chapter05_RetentionPolicy extends KakfaBoilerplate {
                 Try.of(() -> producer.send(new ProducerRecord<>(destTopicFn.apply(s), key, s)).get())
                     .peek(md -> { if(!silent) { LOG.info("PRODUCED {} key={} msg={}", msgId(md), key, s); }})
                     .onFailure(e -> LOG.error(e.getMessage(), e));
-                Try.run(() -> Thread.sleep(30));
+                Try.run(() -> Thread.sleep(10));
             });
         });
     }

@@ -17,6 +17,10 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * This chapter provides an introduction to the other side of the coin:
+ * consuming the data we previously created.
+ */
 public class Chapter02_Consuming extends KakfaBoilerplate {
 
     private static final Logger LOG = LoggerFactory.getLogger(Chapter02_Consuming.class);
@@ -115,7 +119,9 @@ public class Chapter02_Consuming extends KakfaBoilerplate {
         // We can limit the number of messages on each poll, if they are coming too fast.
         config.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "100");
 
-
+        // Because we run on local clusters and with very few data,
+        // we lower the buffer sizes and relax on isolation levels.
+        // This prevents some erratic cases where consumer never receive data.
         config.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_uncommitted");
         config.put(ConsumerConfig.RECEIVE_BUFFER_CONFIG, "1");
         config.put(ConsumerConfig.SEND_BUFFER_CONFIG, "1");
