@@ -88,9 +88,6 @@ public class Chapter05_RetentionPolicy extends KakfaBoilerplate {
         assertThat(latch.await(2, TimeUnit.MINUTES)).isTrue();
         // We must have lost some messages!
         assertThat(consumedSentences.get()).isLessThan(sentenceCount);
-
-        // You can look at the partition files in this project's target/ch05 folder.
-        dumpPartitionFiles();
     }
 
     private void runConsumer(String topicName, Properties config, CountDownLatch latch, AtomicInteger consumedSentences) {

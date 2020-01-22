@@ -157,7 +157,6 @@ public class KakfaBoilerplate {
         }
         finally {
             consumer.close();
-            dumpPartitionFiles();
         }
     }
 

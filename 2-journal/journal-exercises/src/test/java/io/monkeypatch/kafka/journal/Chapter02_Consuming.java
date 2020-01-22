@@ -82,9 +82,6 @@ public class Chapter02_Consuming extends KakfaBoilerplate {
             }
 
             assertThat(countReceived).isEqualTo(sentenceCount);
-
-            // You can look at the partition files in this project's target/ch02 folder.
-            dumpPartitionFiles();
         }
         finally {
             // Don't forget to close the consumers when you're done with them.

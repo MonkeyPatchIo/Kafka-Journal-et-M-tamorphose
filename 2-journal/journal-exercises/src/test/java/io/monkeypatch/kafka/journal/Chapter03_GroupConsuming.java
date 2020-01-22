@@ -75,9 +75,6 @@ public class Chapter03_GroupConsuming extends KakfaBoilerplate {
 
         // Allow consumers to terminate properly.
         finished.set(true);
-
-        // You can look at the partition files in this project's target/ch03 folder.
-        dumpPartitionFiles();
     }
 
     private void runConsumer(Properties config, String consumerId, CountDownLatch latch, AtomicBoolean finished, AtomicInteger throttlePollingMs) {
